@@ -25,7 +25,7 @@ local get_links_from_google_search_results= function(results_html)
     local tree=parser:parse()
     local root=tree[1]:root()
 
-    local query = vim.treesitter.parse_query('html',[[
+    local query = q.parse('html',[[
     (element
     (start_tag (tag_name) (attribute (attribute_name) @n  (#eq? @n "href") (quoted_attribute_value) @v) ) 
     (element
@@ -36,8 +36,8 @@ local get_links_from_google_search_results= function(results_html)
     ]])
     res={}
     for _,captures,metadata in query:iter_matches(root,results_html) do
-      local url=q.get_node_text(captures[2],results_html)
-      local title=q.get_node_text(captures[4],results_html)
+      local url=ts.get_node_text(captures[2],results_html)
+      local title=ts.get_node_text(captures[4],results_html)
       table.insert(res,{url=url,title=title})
     end
     return res
@@ -76,8 +76,8 @@ local query = vim.treesitter.parse_query('html',[[
 ]])
 local res={}
 for _,captures,metadata in query:iter_matches(root,results_html) do
-  local url=q.get_node_text(captures[2],results_html)
-  local title=q.get_node_text(captures[4],results_html)
+  local url=ts.get_node_text(captures[2],results_html)
+  local title=ts.get_node_text(captures[4],results_html)
   table.insert(res,{url=url,title=title})
 end
 return res
