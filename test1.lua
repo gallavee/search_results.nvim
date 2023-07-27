@@ -91,6 +91,7 @@ end
 local pickers = require('telescope.pickers')
 local finders = require('telescope.finders')
 local sorters = require('telescope.sorters')
+local previewers = require('telescope.previewers')
 local themes = require('telescope.themes')
 local actions = require("telescope.actions")
 local action_state = require "telescope.actions.state"
@@ -103,13 +104,28 @@ local show_results_in_telescope = function(query)
     -- 
     table.insert( titles,{v.title,v.url})
   end
+  local load_w3m_into_buffer=function(url)
+    local cmd_string = string.format([[
+    tabnew
+    read !w3m -dump %s
+    0
+    ]],url)
+
+    vim.api.nvim_exec(cmd_string,true)
+
+  end
   local attach_mappings = function(prompt_bufnr, map)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
         local url = selection['value']['url']:gsub( '^"(.*)"$', "%1")
-        print(url)
         vim.cmd("OpenBrowser "..url)
+      end)
+      actions.select_tab:replace(function()
+        actions.close(prompt_bufnr)
+        local selection = action_state.get_selected_entry()
+        local url = selection['value']['url']
+        load_w3m_into_buffer(url)
       end)
       return true
   end
@@ -128,6 +144,18 @@ local show_results_in_telescope = function(query)
     sorter =sorters.get_generic_fuzzy_sorter({}),
     prompt_title = "Search results for  query: "..query,
     attach_mappings = attach_mappings,
+    previewer = previewers.new_termopen_previewer {
+      get_command = function(entry)
+        return {"w3m",entry['value']['url']:gsub('"','')}
+      end,
+      scroll_fn= function(self,direction)
+        if direction < 0 then
+          self._send_input(self,'b')
+        else
+        self._send_input(self,'<Space>')
+        end
+      end
+    },
   }
   local search_results = function(opts)
     opts = opts or {}
@@ -143,3 +171,5 @@ local telescope_search_results = function()
   end
 
   vim.keymap.set('n',"<leader>st", telescope_search_results, {desc = "find on web and show in vim"})
+
+
